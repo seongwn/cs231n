@@ -1,2 +1,3 @@
-# cs231n
-cs231n spring1819 assignment 
+# CS231n
+📌STANFORD CS231N SPRING1819 ASSIGNMENT 
+(http://cs231n.github.io/)
