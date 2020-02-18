@@ -202,18 +202,28 @@ class FullyConnectedNet(object):
         
         Ws = ['W'+str(i+1) for i in range(L)]
         bs = ['b'+str(i+1) for i in range(L)]
-        
+        if normalization != None:
+            gammas = ['gamma'+str(i+1) for i in range(L)]
+            betas = ['beta'+str(i+1) for i in range(L)]
+
         self.params['W1'] = np.random.normal(0,weight_scale,(input_dim,hidden_dims[0]))
         self.params['b1'] = np.zeros((hidden_dims[0],))
+        if normalization != None:
+            self.params['gamma1'] = np.ones(hidden_dims[0])
+            self.params['beta1'] = np.zeros(hidden_dims[0])
+        
         for i in range(1,L):
             if i == L-1:
                 self.params[Ws[i]] = np.random.normal(0,weight_scale,(hidden_dims[i-1],num_classes))
                 self.params[bs[i]] = np.zeros((num_classes,))
                 break
+                
             self.params[Ws[i]] = np.random.normal(0,weight_scale,(hidden_dims[i-1],hidden_dims[i]))
             self.params[bs[i]] = np.zeros((hidden_dims[i],))
+            if normalization != None:
+                self.params[gammas[i]] = np.ones((hidden_dims[i],))
+                self.params[betas[i]] = np.zeros((hidden_dims[i],))
         
-        #When using batch normalization
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -247,7 +257,6 @@ class FullyConnectedNet(object):
     def loss(self, X, y=None):
         """
         Compute loss and gradient for the fully-connected net.
-
         Input / output: Same as TwoLayerNet above.
         """
         X = X.astype(self.dtype)
@@ -257,7 +266,7 @@ class FullyConnectedNet(object):
         # behave differently during training and testing.
         if self.use_dropout:
             self.dropout_param['mode'] = mode
-        if self.normalization=='batchnorm':
+        if self.normalization == 'batchnorm':
             for bn_param in self.bn_params:
                 bn_param['mode'] = mode
         scores = None
@@ -274,28 +283,73 @@ class FullyConnectedNet(object):
         # layer, etc.                                                              #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-        #{affine - [batch/layer norm] - relu - [dropout]} x (L - 1) - affine - softmax
+        # {affine - [batch/layer norm] - relu - [dropout]} x (L - 1) - affine - softmax
         L = self.num_layers
+        Ws = ['W' + str(i + 1) for i in range(L)]  # = ['W1',...,'WL']
+        bs = ['b' + str(i + 1) for i in range(L)]  # = ['b1',...,'bL']
+                    
+        fcs = [None for i in range(L)]  # = [None,...]
+        Xs = [None for i in range(L - 1)]  # = [None,...]
+
+        affine_caches = [None for i in range(L)]  # = [None,...]
+        relu_caches = [None for i in range(L - 1)]  # = [None,...]
         
-        Ws = ['W'+str(i+1) for i in range(L)] # = ['W1',...,'WL']
-        bs = ['b'+str(i+1) for i in range(L)] # = ['b1',...,'bL']
-        fcs = [None for i in range(L)] # = [None,...]
-        Xs = [None for i in range(L-1)] # = [None,...]
-        affine_caches = [None for i in range(L)] # = [None,...]
-        relu_caches = [None for i in range(L-1)] # = [None,...]
-        
-        # first layer
-        fcs[0], affine_caches[0] = affine_forward(X,self.params['W1'],self.params['b1'])
-        Xs[0], relu_caches[0] = relu_forward(fcs[0])
-        # 2nd ~ L-th Layer
-        for i in range(1,L):
-            fcs[i], affine_caches[i] = affine_forward(Xs[i-1],self.params[Ws[i]],self.params[bs[i]])
-            if i==L-1:
-                break
-            Xs[i], relu_caches[i] = relu_forward(fcs[i])
-        
+        if self.normalization == None:
+            # first layer
+            fcs[0], affine_caches[0] = affine_forward(X, self.params['W1'], self.params['b1'])
+            Xs[0], relu_caches[0] = relu_forward(fcs[0])
+            # 2nd ~ L-th Layer
+            for i in range(1, L):
+                fcs[i], affine_caches[i] = affine_forward(Xs[i - 1], self.params[Ws[i]], self.params[bs[i]])
+                if i == L - 1:
+                    break
+                Xs[i], relu_caches[i] = relu_forward(fcs[i])
+
+
+        elif self.normalization == 'batchnorm':
+            # batch normalization
+            gammas = ['gamma' + str(i + 1) for i in range(L - 1)]  # = ['gamma1',...,'gammaL-1']
+            betas = ['beta' + str(i + 1) for i in range(L - 1)]  # = ['beta1',...,'betaL-1']
+
+            bn_fcs = [None for i in range(L - 1)]  # = [None,...] # batch normalization
+            bn_caches = [None for i in range(L - 1)]  # = [None,...] # batch normalization
+            # first layer
+            fcs[0], affine_caches[0] = affine_forward(X, self.params['W1'], self.params['b1'])
+            bn_fcs[0], bn_caches[0] = batchnorm_forward(fcs[0], self.params['gamma1'], self.params['beta1'],self.bn_params[0])  # batch normalization
+            Xs[0], relu_caches[0] = relu_forward(bn_fcs[0])
+
+            # 2nd ~ L-th Layer
+            for i in range(1, L):
+                fcs[i], affine_caches[i] = affine_forward(Xs[i - 1], self.params[Ws[i]], self.params[bs[i]])
+                if i == L - 1:
+                    break
+                bn_fcs[i], bn_caches[i] = batchnorm_forward(fcs[i], self.params[gammas[i]], self.params[betas[i]],self.bn_params[i])  # batch normalization
+                Xs[i], relu_caches[i] = relu_forward(bn_fcs[i])
+
+        elif self.normalization == 'layernorm':
+            # Layer normalization
+            gammas = ['gamma' + str(i + 1) for i in range(L - 1)]  # = ['gamma1',...,'gammaL-1']
+            betas = ['beta' + str(i + 1) for i in range(L - 1)]  # = ['beta1',...,'betaL-1']
+
+            ln_fcs = [None for i in range(L - 1)]  # = [None,...] # layer normalization
+            ln_caches = [None for i in range(L - 1)]  # = [None,...] # layer normalization
+            # first layer
+            fcs[0], affine_caches[0] = affine_forward(X, self.params['W1'], self.params['b1'])
+            ln_fcs[0], ln_caches[0] = layernorm_forward(fcs[0], self.params['gamma1'], self.params['beta1'],self.bn_params[0])  # layer normalization
+            Xs[0], relu_caches[0] = relu_forward(ln_fcs[0])
+
+            # 2nd ~ L-th Layer
+            for i in range(1, L):
+                fcs[i], affine_caches[i] = affine_forward(Xs[i - 1], self.params[Ws[i]], self.params[bs[i]])
+                if i == L - 1:
+                    break
+                ln_fcs[i], ln_caches[i] = layernorm_forward(fcs[i], self.params[gammas[i]], self.params[betas[i]],self.bn_params[i])  # layer normalization
+                Xs[i], relu_caches[i] = relu_forward(ln_fcs[i])
+        else:
+            pass
+
         # compute scores
-        scores = fcs[L-1]
+        scores = fcs[L - 1]
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -312,7 +366,7 @@ class FullyConnectedNet(object):
         # data loss using softmax, and make sure that grads[k] holds the gradients #
         # for self.params[k]. Don't forget to add L2 regularization!               #
         #                                                                          #
-        # When using batch/layer normalization, you don't need to regularize the scale   
+        # When using batch/layer normalization, you don't need to regularize the scale
         # and shift parameters.                                                    #
         #                                                                          #
         # NOTE: To ensure that your implementation matches ours and you pass the   #
@@ -321,27 +375,36 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         reg = self.reg
-        
-        loss, dout = softmax_loss(scores,y)
+
+        loss, dout = softmax_loss(scores, y)
         dXs = [None for i in range(L)]
-        
+
         # backpropa - Last Layer
-        dXs[L-1], grads[Ws[L-1]], grads[bs[L-1]] = affine_backward(dout,affine_caches[L-1])
-        
+        dXs[L - 1], grads[Ws[L - 1]], grads[bs[L - 1]] = affine_backward(dout, affine_caches[L - 1])
+
         # L2 Regularization
-        grads[Ws[L-1]] += reg * self.params[Ws[L-1]]
-        
+        grads[Ws[L - 1]] += reg * self.params[Ws[L - 1]]
+
         # backpropa - (L-1)-th ~ first Layer
-        for i in range(1,L):
-            dXs[L-1-i] = relu_backward(dXs[L-i],relu_caches[L-1-i])
-            dXs[L-1-i], grads[Ws[L-1-i]], grads[bs[L-1-i]] = affine_backward(dXs[L-1-i],affine_caches[L-1-i])
+        for i in range(1, L):
+            dXs[L - 1 - i] = relu_backward(dXs[L - i], relu_caches[L - 1 - i])
+            if self.normalization == None:
+                dXs[L - 1 - i], grads[Ws[L - 1 - i]], grads[bs[L - 1 - i]] = affine_backward(dXs[L - 1 - i], affine_caches[L - 1 - i])
+            elif self.normalization == 'batchnorm':
+                dXs[L - 1 - i], grads[gammas[L - 1 - i]], grads[betas[L - 1 - i]] = batchnorm_backward_alt(dXs[L - 1 - i], bn_caches[L - 1 - i])
+                dXs[L - 1 - i], grads[Ws[L - 1 - i]], grads[bs[L - 1 - i]] = affine_backward(dXs[L - 1 - i], affine_caches[L - 1 - i])
+            elif self.normalization == 'layernorm':
+                dXs[L - 1 - i], grads[gammas[L - 1 - i]], grads[betas[L - 1 - i]] = layernorm_backward(dXs[L - 1 - i], ln_caches[L - 1 - i])
+                dXs[L - 1 - i], grads[Ws[L - 1 - i]], grads[bs[L - 1 - i]] = affine_backward(dXs[L - 1 - i],affine_caches[L - 1 - i])
+            else:
+                pass
             # L2 Regularization
-            grads[Ws[L-1-i]] += reg * self.params[Ws[L-1-i]]
-        
+            grads[Ws[L - 1 - i]] += reg * self.params[Ws[L - 1 - i]]
+
         # L2 Regularization
         W_sum = 0
         for i in range(L):
-            W_sum += np.sum(self.params[Ws[i]]**2)
+            W_sum += np.sum(self.params[Ws[i]] ** 2)
         loss = loss + reg * W_sum * 0.5
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
