@@ -651,6 +651,7 @@ def max_pool_forward_naive(x, pool_param):
       H' = 1 + (H - pool_height) / stride
       W' = 1 + (W - pool_width) / stride
     - cache: (x, pool_param)
+    
     """
     out = None
     ###########################################################################
@@ -670,6 +671,7 @@ def max_pool_forward_naive(x, pool_param):
             for n in range(N):
                 for c in range(C):
                     out[n,c,i,j] = np.max(x[n,c,i*stride:i*stride+pool_height,j*stride:j*stride+pool_width])
+    
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -698,8 +700,19 @@ def max_pool_backward_naive(dout, cache):
     pool_height, pool_width, stride = pool_param.values()
     N, C, H, W = np.shape(x)
     
+    H_ap = int(1 + (H - pool_height) / stride)
+    W_ap = int(1 + (W - pool_width) / stride)
+    
+    
     dx = np.zeros((N,C,H,W))
     
+    for i in range(H_ap):
+        for j in range(W_ap):
+            for n in range(N):
+                for c in range(C):
+                    max_val = np.max(x[n,c,i*stride:i*stride+pool_height,j*stride:j*stride+pool_width])
+                    dx[n,c,i*stride:i*stride+pool_height,j*stride:j*stride+pool_width] = (x[n,c,i*stride:i*stride+pool_height,j*stride:j*stride+pool_width] >= max_val) * dout[n,c,i,j] 
+                    
     
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
