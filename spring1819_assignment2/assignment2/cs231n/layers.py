@@ -753,9 +753,9 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     # Your implementation should be very short; ours is less than five lines. #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
-
+    N, C, H, W = np.shape(x)
+    temp, cache = batchnorm_forward(np.reshape(x,(-1,C)), gamma, beta, bn_param)
+    out = np.reshape(temp,(N,C,H,W))
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -787,9 +787,9 @@ def spatial_batchnorm_backward(dout, cache):
     # Your implementation should be very short; ours is less than five lines. #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
-
+    N, C, H, W = np.shape(dout)
+    dx, dgamma, dbeta = batchnorm_backward(np.reshape(dout,(-1,C)),cache)
+    dx = np.reshape(dx,(N,C,H,W))
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -827,9 +827,47 @@ def spatial_groupnorm_forward(x, gamma, beta, G, gn_param):
     # and layer normalization!                                                # 
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    #######################################################################################################
+    #코드 참고: https://github.com/haofeixu/stanford-cs231n-2018/blob/master/assignment2/cs231n/layers.py
+    N, C, H, W = x.shape
+    x = np.reshape(x, (N*G, C//G*H*W))
+    
+    # Transpose x to use batchnorm code
+    x = x.T
 
-    pass
+    # Just copy from batch normalization cdoe
+    mu = np.mean(x, axis=0)
+    
+    xmu = x - mu
+    sq = xmu ** 2
+    var = np.var(x, axis=0)
 
+    sqrtvar = np.sqrt(var + eps)
+    ivar = 1./sqrtvar
+    xhat = xmu * ivar
+    
+    # Transform xhat and reshape
+    xhat = np.reshape(xhat.T, (N, C, H, W))
+    out = gamma[np.newaxis, :, np.newaxis, np.newaxis] * xhat + beta[np.newaxis, :, np.newaxis, np.newaxis]
+
+    cache = (xhat, gamma, xmu, ivar, sqrtvar, var, eps, G)
+    #######################################################################################################
+    '''My code
+    N, C, H, W = np.shape(x)
+    C_G = C / G
+    
+    x_g = np.split(x, G, axis=1) #(G,N,C_G,H,W)
+    x_g = np.reshape(x_g, (G,-1)) #(G,N*C_G*H*W)
+    x_mean = np.sum(x_g, axis=1) / (N*C_G*H*W) #(G,)
+    x_m = (x_g.T - x_mean.T) #(N*C_G*H*W,G)
+    x_m = x_m.T #(G,N*C_G*H*W)
+    var = np.sum((x_m**2), axis=1) / (N*C_G*H*W) #(G,)
+    x_hat = x_m.T / np.sqrt(var.T + eps) #(N*C_G*H*W,G)
+    x_hat = np.reshape(x_hat,(N, C, H, W)) #(N,C,H,W)
+    
+    out = gamma * x_hat + beta
+    cache = (var, x_hat, x_m, gamma, eps, G)
+    '''
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -857,9 +895,28 @@ def spatial_groupnorm_backward(dout, cache):
     # This will be extremely similar to the layer norm implementation.        #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    #######################################################################################################
+    #코드 참고: https://github.com/haofeixu/stanford-cs231n-2018/blob/master/assignment2/cs231n/layers.py
+    N, C, H, W = dout.shape
 
-    pass
+    xhat, gamma, xmu, ivar, sqrtvar, var, eps, G = cache
 
+    dxhat = dout * gamma[np.newaxis, :, np.newaxis, np.newaxis]
+
+    # Set keepdims=True to make dbeta and dgamma's shape be (1, C, 1, 1)
+    dbeta = np.sum(dout, axis=(0, 2, 3), keepdims=True)
+    dgamma = np.sum(dout*xhat, axis=(0, 2, 3), keepdims=True)
+
+    # Reshape and transpose back
+    dxhat = np.reshape(dxhat, (N*G, C//G*H*W)).T
+    xhat = np.reshape(xhat, (N*G, C//G*H*W)).T
+
+    Nprime, Dprime = dxhat.shape
+    
+    dx = 1.0/Nprime * ivar * (Nprime*dxhat - np.sum(dxhat, axis=0) - xhat*np.sum(dxhat*xhat, axis=0))
+
+    dx = np.reshape(dx.T, (N, C, H, W))
+    #######################################################################################################
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
