@@ -104,11 +104,19 @@ def svm_loss_vectorized(W, X, y, reg):
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     valid_margin = np.zeros(margins.shape)
     valid_margin[margins>0] = 1
+    valid_margin[np.arange(margins.shape[0]),y] -= np.sum(valid_margin,axis=1)
+    dW = (X.T).dot(valid_margin)
+    dW /= X.shape[0]
+    dW = dW + reg * 2 * W
+    '''
+    valid_margin = np.zeros(margins.shape)
+    valid_margin[margins>0] = 1
     num_valid_margin = np.sum(valid_margin,axis=1)
-    margins[np.arange(X.shape[0]),y] -= num_valid_margin
+    valid_margin[np.arange(X.shape[0]),y] -= num_valid_margin
     dW = (X.T).dot(valid_margin) 
     dW /= X.shape[0]
     dW = dW + reg * 2 * W
+    '''
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     
     return loss, dW
