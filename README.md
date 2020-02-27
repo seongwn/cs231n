@@ -5,9 +5,11 @@
 # Assignment1
 file | link
 ---|---|
-knn.ipynb | *[knn](https://blog.naver.com/standonstage/221822954186) *[cross validation](https://blog.naver.com/standonstage/221824567966)
+knn.ipynb | *[knn](https://blog.naver.com/standonstage/221822954186) 
+*[cross validation](https://blog.naver.com/standonstage/221824567966)
 ---|---|
-svm.ipynb | *[svm(1)](https://blog.naver.com/standonstage/221825818176) *[svm(2)](https://blog.naver.com/standonstage/221826177943)
+svm.ipynb | *[svm(1)](https://blog.naver.com/standonstage/221825818176) 
+*[svm(2)](https://blog.naver.com/standonstage/221826177943)
 ---|---|
 softmax.ipynb |
 ---|---| *[softmax](https://blog.naver.com/standonstage/221826177943)
