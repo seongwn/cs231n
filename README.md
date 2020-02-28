@@ -7,7 +7,7 @@ file | link | completed
 :---:|---|:---:|
 **knn.ipynb** | [knn](https://blog.naver.com/standonstage/221822954186)<br>[cross validation](https://blog.naver.com/standonstage/221824567966) | ✔ |
 **svm.ipynb** | [svm(1)](https://blog.naver.com/standonstage/221825818176)<br>[svm(2)](https://blog.naver.com/standonstage/221826177943) | ✔ |
-**softmax.ipynb** | [softmax](https://blog.naver.com/standonstage/221826177943) | ✔ |
+**softmax.ipynb** | [softmax](https://blog.naver.com/standonstage/221826177943)<br>[regularization](https://blog.naver.com/standonstage/221829259576)| ✔ |
 **two_layer_net.ipynb** |[two layer net](https://blog.naver.com/standonstage/221829219049)| ✔ |
 features.ipynb | | ✔ |
 
