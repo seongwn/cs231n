@@ -15,7 +15,7 @@ features.ipynb | | ✔ |
 ### Assignment2
 file | link | completed
 :---:|---|:---:|
-FullyConnectedNets.ipynb | | ✔ |
+FullyConnectedNets.ipynb |[fully connected neural net](https://blog.naver.com/standonstage/221835305697)| ✔ |
 BatchNormalization.ipynb | | ✔ |
 Dropout.ipynb | | ✔ |
 ConvolutionalNetworks.ipynb | | ✔ |
