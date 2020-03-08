@@ -365,7 +365,7 @@ def layernorm_forward(x, gamma, beta, ln_param):
     xm = x - sample_mean
     sample_var = np.sum(xm**2) / H
     x_hat = xm / np.sqrt(sample_var + eps)
-        
+    
     out = gamma * x_hat + beta
         
     cache = (sample_var, x_hat, xm, gamma, eps)
