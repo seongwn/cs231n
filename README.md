@@ -17,6 +17,6 @@ file | link | completed
 :---:|---|:---:|
 **FullyConnectedNets.ipynb** |[fully connected neural net(1)](https://blog.naver.com/standonstage/221835305697)<br>[fully connected neural net(2)](https://blog.naver.com/standonstage/221843507811)| ✔ |
 **BatchNormalization.ipynb** |[batch normalization(1)](https://blog.naver.com/standonstage/221839408929) | ✔ |
-Dropout.ipynb | | ✔ |
+**Dropout.ipynb** |[dropout](https://blog.naver.com/standonstage/221846883282) | ✔ |
 ConvolutionalNetworks.ipynb | | ✔ |
 

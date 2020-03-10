@@ -916,6 +916,7 @@ def spatial_groupnorm_backward(dout, cache):
     dx = 1.0/Nprime * ivar * (Nprime*dxhat - np.sum(dxhat, axis=0) - xhat*np.sum(dxhat*xhat, axis=0))
 
     dx = np.reshape(dx.T, (N, C, H, W))
+    #코드 참고: https://github.com/haofeixu/stanford-cs231n-2018/blob/master/assignment2/cs231n/layers.py
     #######################################################################################################
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
